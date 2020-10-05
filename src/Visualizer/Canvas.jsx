@@ -1,5 +1,5 @@
 import songFile from '../audio/MarchingBands.mp3'
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Slider from '@material-ui/core/Slider';
 
 // Changing Variables
@@ -18,11 +18,11 @@ const center_y = height / 2;
 function Canvas() {
     //const audioElement = new Audio(songFile);
    
-    const [audio, setAudio] = React.useState(new Audio(songFile))
+    const [audio] = React.useState(new Audio(songFile))
     const [volume, setVolume] = React.useState(0.2)
     audio.volume = volume;
     const [playSong, setPlay] = React.useState(false)
-    const [canvas,setCanvas] = React.useState(React.createRef())
+    const [canvas] = React.useState(React.createRef())
     const [frequency_array, setArray] = React.useState()
     const [analyser,setAnalyser] = React.useState()
     const [rafId, setRafId] = React.useState()
@@ -35,7 +35,7 @@ function Canvas() {
         src.connect(analyser1)
         analyser1.connect(context.destination)
         setArray(new Uint8Array(analyser1.frequencyBinCount));
-      }, []);
+      }, [audio]);
 
     function songSelect() {
         
