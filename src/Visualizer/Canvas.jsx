@@ -13,6 +13,10 @@ const bar_width = 1;
 const radius = 0;
 const center_x = width / 2;
 const center_y = height / 2;
+let context = new AudioContext()
+const analyser = context.createAnalyser()
+let rafId;
+const frequency_array = new Uint8Array(analyser.frequencyBinCount)
 
 
 function Canvas() {
@@ -23,23 +27,20 @@ function Canvas() {
     audio.volume = volume;
     const [playSong, setPlay] = React.useState(false)
     const [canvas] = React.useState(React.createRef())
-    const [frequency_array, setArray] = React.useState()
-    const [analyser,setAnalyser] = React.useState()
-    const [rafId, setRafId] = React.useState()
 
-    useEffect(() => {
-        const context = new AudioContext()
+
+    useEffect(() => {        
         const src = context.createMediaElementSource(audio)
-        const analyser1 = context.createAnalyser()
-        setAnalyser(analyser1)
-        src.connect(analyser1)
-        analyser1.connect(context.destination)
-        setArray(new Uint8Array(analyser1.frequencyBinCount));
+        src.connect(analyser)
+        analyser.connect(context.destination)
+        
+        console.log(src)
         
         return function cleanup() {
             cancelAnimationFrame(rafId)
-            analyser1.disconnect()
+            analyser.disconnect()
             src.disconnect()
+            console.log("hello me old chum")
           };
         
       }, [audio]);
@@ -49,10 +50,10 @@ function Canvas() {
     }
 
     function songPlay() {
-        setPlay(true)       
+        setPlay(true) 
+        rafId = requestAnimationFrame(tick)      
         audio.play();
-        const rafId1 = requestAnimationFrame(tick);
-        setRafId(rafId1)
+        context.resume();
         console.log('playing song')   
         console.log(playSong)    
     }
@@ -110,7 +111,7 @@ function Canvas() {
     const tick = () => {
         animationLooper(canvas.current);
         analyser.getByteTimeDomainData(frequency_array);
-        setRafId(requestAnimationFrame(tick));
+        rafId = requestAnimationFrame(tick)
     }
 
 
