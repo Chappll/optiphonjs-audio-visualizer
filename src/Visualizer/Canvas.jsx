@@ -2,21 +2,39 @@ import songFile from '../audio/MarchingBands.mp3'
 import React, { useState, useEffect } from 'react';
 import Slider from '@material-ui/core/Slider';
 
+// Changing Variables
+let ctx, x_end, y_end, bar_height;
+
+//Constants 
+const width = window.innerWidth;
+const height = window.innerHeight;
+const bars = 555;
+const bar_width = 1;
+const radius = 0;
+const center_x = width / 2;
+const center_y = height / 2;
+
 
 function Canvas() {
     //const audioElement = new Audio(songFile);
+   
     const [audio, setAudio] = React.useState(new Audio(songFile))
     const [volume, setVolume] = React.useState(0.2)
     audio.volume = volume;
     const [playSong, setPlay] = React.useState(false)
+    const [canvas,setCanvas] = React.useState(React.createRef())
+    const [frequency_array, setArray] = React.useState()
+    const [analyser,setAnalyser] = React.useState()
+    const [rafId, setRafId] = React.useState()
 
     useEffect(() => {
         const context = new AudioContext()
         const src = context.createMediaElementSource(audio)
-        const analyser = context.createAnalyser()
-        src.connect(analyser)
-        analyser.connect(context.destination)
-        const frequency_array = new Uint8Array(analyser.frequencyBinCount);
+        const analyser1 = context.createAnalyser()
+        setAnalyser(analyser1)
+        src.connect(analyser1)
+        analyser1.connect(context.destination)
+        setArray(new Uint8Array(analyser1.frequencyBinCount));
       }, []);
 
     function songSelect() {
@@ -26,6 +44,8 @@ function Canvas() {
     function songPlay() {
         setPlay(true)       
         audio.play();
+        const rafId1 = requestAnimationFrame(tick);
+        setRafId(rafId1)
         console.log('playing song')   
         console.log(playSong)    
     }
@@ -33,6 +53,7 @@ function Canvas() {
     function songPause() {
         setPlay(false)   
         audio.pause();
+        cancelAnimationFrame(rafId);
         console.log('playing song')   
         console.log(playSong)   
     }
@@ -41,7 +62,51 @@ function Canvas() {
         setVolume(newValue);
       };
     
-      
+    function animationLooper(canvas) {
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx = canvas.getContext("2d");
+
+        for (var i = 0; i < bars; i++) {
+            //divide a circle into equal part
+            const rads = Math.PI * 2 / bars;
+
+            // Math is magical
+            bar_height = frequency_array[i] * 2;
+
+            const x = center_x + Math.cos(rads * i) * (radius);
+            const y = center_y + Math.sin(rads * i) * (radius);
+            x_end = center_x + Math.cos(rads * i) * (radius + bar_height);
+            y_end = center_y + Math.sin(rads * i) * (radius + bar_height);
+
+            //draw a bar
+            drawBar(x, y, x_end, y_end, frequency_array[i], ctx, canvas);
+        }
+
+        function drawBar(x1=0, y1=0, x2=0, y2=0, frequency, ctx, canvas) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, "rgba(35, 7, 77, 1)");
+            gradient.addColorStop(1, "rgba(204, 83, 51, 1)");
+            ctx.fillStyle = gradient;
+    
+            const lineColor = "rgb(" + frequency + ", " + frequency + ", " + 205 + ")";
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = bar_width;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+    }
+    
+    const tick = () => {
+        animationLooper(canvas.current);
+        analyser.getByteTimeDomainData(frequency_array);
+        setRafId(requestAnimationFrame(tick));
+    }
+
+
 
     return(
         // <button onClick={song.play}>Play</button>
@@ -51,6 +116,7 @@ function Canvas() {
             
             <div>
                 <Slider min={0} max={1} step={0.01} onChange={handleChange} ></Slider>
+                <canvas ref={canvas} />
             </div>
         </div>
     );   
