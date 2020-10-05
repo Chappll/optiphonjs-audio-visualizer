@@ -35,6 +35,13 @@ function Canvas() {
         src.connect(analyser1)
         analyser1.connect(context.destination)
         setArray(new Uint8Array(analyser1.frequencyBinCount));
+        
+        return function cleanup() {
+            cancelAnimationFrame(rafId)
+            analyser1.disconnect()
+            src.disconnect()
+          };
+        
       }, [audio]);
 
     function songSelect() {
